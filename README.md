@@ -73,72 +73,45 @@
 
 ## ✨ Key Features
 
-```
-╔══════════════════════════════════════════════════════════════╗
-║                                                              ║
-║   🔑 User Registration & Login with Email Validation         ║
-║   🔒 Session Management via MongoDB Store                    ║
-║   🔁 Forgot Password with Confirmation Matching              ║
-║   🧩 Dynamic Crossword Grid (11×12 Matrix)                   ║
-║   💡 Smart Clue System (5 clues per game)                    ║
-║   ✅ Answer Validation with Visual Feedback (Red/White)       ║
-║   🧮 Row/Column Auto-Solve Feature                           ║
-║   🎨 Gradient UI + Animated Sliding Background               ║
-║   📱 Responsive Design with Bootstrap                        ║
-║   🚪 Secure Logout with Session Destruction                  ║
-║                                                              ║
-╚══════════════════════════════════════════════════════════════╝
-```
+- 🔑 User Registration & Login with Email Validation
+- 🔒 Session Management via MongoDB Store
+- 🔁 Forgot Password with Confirmation Matching
+- 🧩 Dynamic Crossword Grid (11×12 Matrix)
+- 💡 Smart Clue System (5 clues per game)
+- ✅ Answer Validation with Visual Feedback (Red/White)
+- 🧮 Row/Column Auto-Solve Feature
+- 🎨 Gradient UI + Animated Sliding Background
+- 📱 Responsive Design with Bootstrap
+- 🚪 Secure Logout with Session Destruction
 
 ---
 
 ## 🏗️ System Architecture
 
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                         CLIENT (Browser)                        │
-│  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌──────────────┐   │
-│  │ Register │  │  Login   │  │  Puzzle  │  │ Forgot Pass  │   │
-│  │  (EJS)   │  │  (EJS)   │  │  (EJS)   │  │    (EJS)     │   │
-│  └────┬─────┘  └────┬─────┘  └────┬─────┘  └──────┬───────┘   │
-│       │              │              │               │           │
-│       └──────────────┼──────────────┼───────────────┘           │
-│                      │     AJAX (jQuery)                        │
-└──────────────────────┼──────────────────────────────────────────┘
-                       │
-                       ▼
-┌──────────────────────────────────────────────────────────────────┐
-│                      SERVER (Node.js + Express)                  │
-│                                                                  │
-│  ┌─────────────────┐    ┌──────────────────────────────────┐    │
-│  │   Routes Layer  │    │       Middleware Stack            │    │
-│  │   (index.js)    │    │  • body-parser (JSON + URL)      │    │
-│  │                 │    │  • express-session (MongoDB)      │    │
-│  │  GET  /         │    │  • static file serving            │    │
-│  │  POST /         │    │  • 404 error handler              │    │
-│  │  GET  /login    │    │  • global error handler           │    │
-│  │  POST /login    │    └──────────────────────────────────┘    │
-│  │  GET  /profile  │                                            │
-│  │  GET  /logout   │    ┌──────────────────────────────────┐    │
-│  │  GET  /forget   │    │        Model Layer               │    │
-│  │  POST /forget   │    │   User Schema (Mongoose)         │    │
-│  └─────────────────┘    └──────────────────────────────────┘    │
-└──────────────────────────────┬───────────────────────────────────┘
-                               │
-                               ▼
-┌──────────────────────────────────────────────────────────────────┐
-│                    DATABASE (MongoDB Atlas)                       │
-│                                                                  │
-│  ┌─────────────────────┐    ┌─────────────────────────────┐     │
-│  │   Users Collection  │    │   Sessions Collection       │     │
-│  │                     │    │                             │     │
-│  │  • unique_id        │    │  • _id (session ID)        │     │
-│  │  • email            │    │  • session (serialized)    │     │
-│  │  • username         │    │  • expires                 │     │
-│  │  • password         │    │                             │     │
-│  │  • passwordConf     │    │                             │     │
-│  └─────────────────────┘    └─────────────────────────────┘     │
-└──────────────────────────────────────────────────────────────────┘
+```mermaid
+flowchart TB
+    subgraph CLIENT["🖥️ Client (Browser)"]
+        R["Register\n(EJS)"] & L["Login\n(EJS)"] & P["Puzzle\n(EJS)"] & F["Forgot Pass\n(EJS)"]
+    end
+
+    AJAX["AJAX (jQuery)"]
+
+    subgraph SERVER["⚙️ Server (Node.js + Express)"]
+        ROUTES["Routes Layer\n(index.js)\nGET / · POST /\nGET /login · POST /login\nGET /profile · GET /logout\nGET /forget · POST /forget"]
+        MW["Middleware Stack\nbody-parser · express-session\nstatic files · error handlers"]
+        MODEL["Model Layer\nUser Schema (Mongoose)"]
+    end
+
+    subgraph DB["🗄️ MongoDB Atlas"]
+        USERS[("Users Collection\nunique_id · email\nusername · password")]
+        SESSIONS[("Sessions Collection\n_id · session · expires")]
+    end
+
+    R & L & P & F --> AJAX
+    AJAX --> ROUTES
+    ROUTES <--> MW
+    ROUTES <--> MODEL
+    MODEL --> USERS & SESSIONS
 ```
 
 ---
@@ -362,74 +335,50 @@ const userSchema = new Schema({
 
 ### Entity Relationship
 
-```
-┌──────────────────────────┐
-│        USER              │
-├──────────────────────────┤
-│  unique_id  : Number  PK│
-│  email      : String  UK│
-│  username   : String    │
-│  password   : String    │
-│  passwordConf: String   │
-├──────────────────────────┤
-│  Indexes:                │
-│  • _id (MongoDB default) │
-│  • email (unique lookup) │
-└──────────────────────────┘
-         │
-         │ 1:N (via session.userId)
-         ▼
-┌──────────────────────────┐
-│       SESSION            │
-├──────────────────────────┤
-│  _id     : String     PK│
-│  session : Object       │
-│  expires : Date         │
-└──────────────────────────┘
+```mermaid
+erDiagram
+    USER {
+        Number unique_id PK
+        String email UK
+        String username
+        String password
+        String passwordConf
+    }
+    SESSION {
+        String _id PK
+        Object session
+        Date expires
+    }
+    USER ||--o{ SESSION : "1:N via session.userId"
 ```
 
 ---
 
 ## 🎮 How To Play
 
-```
-  ┌──────────────────────────────────────────┐
-  │          🎮 CrossVerse Game Guide         │
-  ├──────────────────────────────────────────┤
-  │                                          │
-  │  1️⃣  Register with your email           │
-  │  2️⃣  Login to access the puzzle         │
-  │  3️⃣  Read the superhero clues           │
-  │  4️⃣  Fill in the crossword grid         │
-  │  5️⃣  Use these buttons:                 │
-  │                                          │
-  │     🔍 Check  → Validates your answers   │
-  │        (Red = Wrong, White = Correct)    │
-  │                                          │
-  │     💡 Clue   → Reveals selected cell    │
-  │        (Limited to 5 clues!)             │
-  │                                          │
-  │     🧮 Solve  → Solves the row/column    │
-  │        of the selected cell              │
-  │                                          │
-  │     🗑️ Clear  → Clears all your inputs   │
-  │                                          │
-  ├──────────────────────────────────────────┤
-  │                                          │
-  │  📋 Crossword Hints:                     │
-  │                                          │
-  │  ACROSS:                                 │
-  │   3 → Metal Claws with Healing Ability   │
-  │   5 → Swings around by a web            │
-  │   6 → Swords and healing ability         │
-  │                                          │
-  │  DOWN:                                   │
-  │   1 → Gamma Rays                         │
-  │   2 → Blind, but beware                  │
-  │   4 → Love from Krypton                  │
-  │                                          │
-  └──────────────────────────────────────────┘
-```
+1. Register with your email
+2. Login to access the puzzle
+3. Read the superhero clues
+4. Fill in the crossword grid
+5. Use the game buttons:
+
+| Button | Action |
+|--------|--------|
+| 🔍 **Check** | Validates your answers (Red = Wrong, White = Correct) |
+| 💡 **Clue** | Reveals the selected cell (limited to 5 clues!) |
+| 🧮 **Solve** | Solves the entire row/column of the selected cell |
+| 🗑️ **Clear** | Clears all your inputs |
+
+**Crossword Hints:**
+
+| # | Direction | Hint |
+|---|-----------|------|
+| 1 | ⬇️ Down | Gamma Rays |
+| 2 | ⬇️ Down | Blind, but beware |
+| 3 | ➡️ Across | Metal Claws with Healing Ability |
+| 4 | ⬇️ Down | Love from Krypton |
+| 5 | ➡️ Across | Swings around by a web |
+| 6 | ➡️ Across | Swords and healing ability |
 
 <details>
 <summary>🤫 <b>Spoiler: Answer Key</b></summary>
